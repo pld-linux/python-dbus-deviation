@@ -3,11 +3,8 @@
 %bcond_without	doc	# Sphinx documentation
 %bcond_without	tests	# unit tests
 %bcond_without	python2 # CPython 2.x module
-%bcond_without	python3 # CPython 3.x module
+%bcond_with	python3 # CPython 3.x module (built from python3-dbus-deviation.spec)
 
-%if %{without python3}
-%undefine	with_doc
-%endif
 Summary:	Parse D-Bus introspection XML and process it in varous ways
 Summary(pl.UTF-8):	Analiza opisów XML protokołu D-Bus i przetwarzanie na różne sposoby
 Name:		python-dbus-deviation
@@ -109,7 +106,12 @@ Dokumentacja API modułu Pythona dbus-deviation.
 %endif
 
 %if %{with python3}
-%py3_build %{?with_tests:test} %{?with_doc:build_sphinx}
+%py3_build %{?with_tests:test}
+%endif
+
+%if %{with doc}
+# doesn't work with python2
+sphinx-build-3 -b html docs docs/build/html
 %endif
 
 %install
@@ -121,9 +123,9 @@ rm -rf $RPM_BUILD_ROOT
 %{__rm} -r $RPM_BUILD_ROOT%{py_sitescriptdir}/{dbusapi,dbusdeviation}/tests
 %py_postclean
 
-%if %{with python3}
-%{__rm} $RPM_BUILD_ROOT%{_bindir}/dbus-interface-*
-%endif
+for f in $RPM_BUILD_ROOT%{_bindir}/dbus-interface-* ; do
+	%{__mv} "$f" "${f}-2"
+done
 %endif
 
 %if %{with python3}
@@ -139,10 +141,8 @@ rm -rf $RPM_BUILD_ROOT
 %files
 %defattr(644,root,root,755)
 %doc AUTHORS NEWS README
-%if %{without python3}
-%attr(755,root,root) %{_bindir}/dbus-interface-diff
-%attr(755,root,root) %{_bindir}/dbus-interface-vcs-helper
-%endif
+%attr(755,root,root) %{_bindir}/dbus-interface-diff-2
+%attr(755,root,root) %{_bindir}/dbus-interface-vcs-helper-2
 %{py_sitescriptdir}/dbusapi
 %{py_sitescriptdir}/dbusdeviation
 %{py_sitescriptdir}/dbus_deviation-%{version}-py*.egg-info
@@ -162,5 +162,5 @@ rm -rf $RPM_BUILD_ROOT
 %if %{with doc}
 %files apidocs
 %defattr(644,root,root,755)
-%doc build-3/sphinx/html/{_modules,_static,*.html,*.js}
+%doc docs/build/html/{_modules,_static,*.html,*.js}
 %endif
